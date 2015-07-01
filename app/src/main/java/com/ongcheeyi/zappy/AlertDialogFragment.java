@@ -15,10 +15,11 @@ public class AlertDialogFragment extends DialogFragment {
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         Context activity = getActivity();
-        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-        builder.setTitle("Oops, failed!")
-                .setMessage("Something went wrong!")
-                .setPositiveButton("OK", null); // not doing anything upon press
-
+        AlertDialog.Builder builder = new AlertDialog.Builder(activity)
+                .setTitle(activity.getString(R.string.error_title))
+                .setMessage(activity.getString(R.string.error_description))
+                .setPositiveButton(activity.getString(R.string.error_confirm), null); // not doing anything upon press
+        AlertDialog dialog = builder.create();
+        return dialog;
     }
 }
