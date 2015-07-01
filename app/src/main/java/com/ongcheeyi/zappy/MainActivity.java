@@ -16,12 +16,17 @@ import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 
 
 public class MainActivity extends ActionBarActivity {
 
     public static final String TAG = MainActivity.class.getSimpleName();
+
+    private WeatherNow currentWeather;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,14 +52,17 @@ public class MainActivity extends ActionBarActivity {
                 @Override
                 public void onResponse(Response response) throws IOException {
                     try {
-                        Log.v(TAG, response.body().string());
+                        String rawJSON = response.body().string();
+                        Log.v(TAG, rawJSON);
                         if (response.isSuccessful()) {
-                            Log.v(TAG, response.body().string());
+                            currentWeather = getWeatherDetails(rawJSON);
                         } else {
                             alertError();
                         }
                     } catch (IOException e) {
                         Log.e(TAG, "Exception caught ", e);
+                    } catch (JSONException e) {
+                        Log.e(TAG, "JSON Exception caught ", e);
                     }
                 }
             });
@@ -62,6 +70,23 @@ public class MainActivity extends ActionBarActivity {
             Toast.makeText(this, getString(R.string.network_unavailable),
                     Toast.LENGTH_LONG).show();
         }
+    }
+
+    private WeatherNow getWeatherDetails(String rawJSON) throws JSONException {
+        // Passes responsibility to handle exception to its caller
+        String timezone = new JSONObject(rawJSON).getString("timezone");
+        JSONObject forecast = new JSONObject(rawJSON).getJSONObject("currently");
+        WeatherNow weather = new WeatherNow();
+        weather.setHumidity(forecast.getDouble("humidity"));
+        weather.setTime(forecast.getLong("time"));
+        weather.setIcon(forecast.getString("icon"));
+        weather.setPrecip(forecast.getDouble("precipProbability"));
+        weather.setSummary(forecast.getString("summary"));
+        weather.setTemp(forecast.getDouble("temperature"));
+        weather.setTimezone(timezone);
+
+        Log.d(TAG, weather.formatTime());
+        return weather;
     }
 
     private boolean internetAvailable() {
