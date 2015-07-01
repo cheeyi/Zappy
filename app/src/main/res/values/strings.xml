@@ -7,4 +7,5 @@
     <string name="error_description">Something went wrong!</string>
     <string name="error_confirm">OK</string>
     <string name="network_unavailable">Network is unavailable!</string>
+    <string name="location_name">Minneapolis, MN</string>
 </resources>
