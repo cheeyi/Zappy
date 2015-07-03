@@ -1,11 +1,14 @@
 package com.ongcheeyi.zappy;
 
 import android.content.Context;
+import android.content.IntentSender;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.location.Address;
+import android.location.Criteria;
 import android.location.Geocoder;
 import android.location.Location;
+import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.support.v7.app.ActionBarActivity;
@@ -41,11 +44,18 @@ import butterknife.ButterKnife;
 
 public class MainActivity extends ActionBarActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
+    /*
+     * Define a request code to send to Google Play services
+     * This code is returned in Activity.onActivityResult
+     */
+    private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
     public static final String TAG = MainActivity.class.getSimpleName();
 
     private WeatherNow currentWeather;
     private LocationNow currentLocation;
-    GoogleApiClient mGoogleApiClient;
+    private Location gpsLocation; // used in case Google Play Services not installed
+    private GoogleApiClient mGoogleApiClient;
+    private LocationManager locationManager;
     double latitude, longitude;
 
     @Bind(R.id.timeLabel) TextView timeLabel; // annotation by ButterKnife is preferred
@@ -113,11 +123,13 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
         if (lastLocation != null) {
             latitude = lastLocation.getLatitude();
             longitude = lastLocation.getLongitude();
-            getWeather(latitude,longitude);
-            getAddress(latitude,longitude);
         } else {
-            Log.v(TAG,"Location null!");
+            Log.v(TAG,"Location null! Trying GPS.");
+            latitude = gpsLocation.getLatitude();
+            longitude = gpsLocation.getLongitude();
         }
+        getWeather(latitude,longitude);
+        getAddress(latitude,longitude);
     }
 
     @Override
@@ -130,12 +142,38 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
 
     @Override
     public void onConnectionFailed(ConnectionResult result) {
-        // This callback is important for handling errors that
-        // may occur while attempting to connect with Google.
-        //
-        // More about this in the 'Handle Connection Failures' section.
-        Log.v(TAG, "Connected to GPlay has failed!");
-
+        /*
+         * Google Play services can resolve some errors it detects.
+         * If the error has a resolution, try sending an Intent to
+         * start a Google Play services activity that can resolve
+         * error.
+         */
+        if (result.hasResolution()) {
+            try {
+                // Start an Activity that tries to resolve the error
+                result.startResolutionForResult(this, CONNECTION_FAILURE_RESOLUTION_REQUEST);
+                /*
+                 * Thrown if Google Play services canceled the original
+                 * PendingIntent
+                 */
+            } catch (IntentSender.SendIntentException e) {
+                // Log the error
+                e.printStackTrace();
+            }
+        } else {
+            /*
+             * If no resolution is available, display a dialog to the
+             * user with the error, then attempt GPS
+             */
+            Log.i(TAG, "Location services connection failed with code " + result.getErrorCode());
+            // Get the location manager
+            locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+            // Define the criteria how to select the location provider -> use
+            // default
+            Criteria criteria = new Criteria();
+            String provider = locationManager.getBestProvider(criteria, false);
+            gpsLocation = locationManager.getLastKnownLocation(provider);
+        }
     }
 
     public void getAddress(double latitude, double longitude) {
