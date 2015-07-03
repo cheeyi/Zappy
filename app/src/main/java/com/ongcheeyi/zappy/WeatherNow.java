@@ -8,9 +8,20 @@ import java.util.TimeZone;
  * Created by CheeYi on 6/30/15.
  */
 public class WeatherNow {
-    private String summary, timezone, icon;
+    private String summary;
+    private String timezone;
+    private String icon;
+    private String location;
     private long time;
     private double temp, humidity, precip;
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
 
     public String getIcon() {
         return icon;

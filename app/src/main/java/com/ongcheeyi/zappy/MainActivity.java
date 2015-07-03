@@ -3,6 +3,8 @@ package com.ongcheeyi.zappy;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -25,10 +27,13 @@ import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -39,6 +44,7 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
     public static final String TAG = MainActivity.class.getSimpleName();
 
     private WeatherNow currentWeather;
+    private LocationNow currentLocation;
     GoogleApiClient mGoogleApiClient;
     double latitude, longitude;
 
@@ -49,6 +55,7 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
     @Bind(R.id.summaryLabel) TextView summaryLabel;
     @Bind(R.id.iconImageView) ImageView iconImageView;
     @Bind(R.id.refreshImageView) ImageView refreshImageView;
+    @Bind(R.id.locationLabel) TextView locationLabel;
     //old school method: tempLabel = (TextView)findViewById(R.id.temperatureLabel);
 
     @Override
@@ -64,7 +71,7 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
         refreshImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                getWeather(latitude, longitude); // refresh weather
+                updateLocation();
             }
         });
 
@@ -97,13 +104,19 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
         // Connected to Google Play services!
         // The good stuff goes here.
         Log.v(TAG, "Connected to GPlay!");
+        updateLocation();
+    }
+
+    private void updateLocation() {
         Location lastLocation = LocationServices.FusedLocationApi.getLastLocation(
                 mGoogleApiClient);
         if (lastLocation != null) {
             latitude = lastLocation.getLatitude();
-            Log.v(TAG, latitude+"");
             longitude = lastLocation.getLongitude();
             getWeather(latitude,longitude);
+            getAddress(latitude,longitude);
+        } else {
+            Log.v(TAG,"Location null!");
         }
     }
 
@@ -125,6 +138,49 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
 
     }
 
+    public void getAddress(double latitude, double longitude) {
+        String googleApiKey = "AIzaSyAzSVjefE6f_87YsU5KK8UbNPTATE6q6Rc";
+        String locationUrl = "https://maps.googleapis.com/maps/api/geocode/json?latlng=" + latitude +
+                "," + longitude + "&key=" + googleApiKey;
+        Log.v(TAG,locationUrl);
+
+        if (internetAvailable()) {
+            OkHttpClient client = new OkHttpClient();
+            Request request = new Request.Builder().url(locationUrl).build();
+            Call call = client.newCall(request);
+            call.enqueue(new Callback() {
+                @Override
+                public void onFailure(Request request, IOException e) {
+                    Log.v(TAG, getString(R.string.response_failure));
+                }
+
+                @Override
+                public void onResponse(Response response) throws IOException {
+                    try {
+                        String rawJSON = response.body().string();
+                        if (response.isSuccessful()) {
+                            currentLocation = getLocationDetails(rawJSON);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() { // this runs on the main UI thread
+                                    locationLabel.setText(currentLocation.getCity());
+                                }
+                            });
+                        } else {
+                            alertError();
+                        }
+                    } catch (IOException e) {
+                        Log.e(TAG, "Exception caught ", e);
+                    } catch (JSONException e) {
+                        Log.e(TAG, "JSON Exception caught ", e);
+                    }
+                }
+            });
+        } else { // Network unavailable
+            Toast.makeText(this, getString(R.string.network_unavailable),
+                    Toast.LENGTH_LONG).show();
+        }
+    }
 
     private void getWeather(double latitude, double longitude) {
 
@@ -185,11 +241,12 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
         Drawable drawable = getResources().getDrawable(currentWeather.getIconId());
 
         tempLabel.setText(currentWeather.getTemp() + ""); // hack to pass in double as 'text'
-        timeLabel.setText(currentWeather.getTime() + "");
+        timeLabel.setText(currentWeather.formatTime() + "");
         humidityValue.setText(currentWeather.getHumidity() + "");
         precipValue.setText(currentWeather.getPrecip() + "%");
         iconImageView.setImageDrawable(drawable);
         summaryLabel.setText(currentWeather.getSummary());
+
     }
 
     private WeatherNow getWeatherDetails(String rawJSON) throws JSONException {
@@ -207,6 +264,22 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
 
         Log.d(TAG, weather.formatTime());
         return weather;
+    }
+
+    private LocationNow getLocationDetails(String rawJSON) throws JSONException {
+        JSONArray resultsArray = new JSONObject(rawJSON).getJSONArray("results");
+        JSONArray results = resultsArray.getJSONObject(0).getJSONArray("address_components");
+        LocationNow location = new LocationNow();
+
+        if (results.length() > 0 && resultsArray.length() > 0) {
+
+            location.setCity(results.getJSONObject(3).getString("short_name"));
+            location.setCountry(results.getJSONObject(6).getString("short_name"));
+        } else {
+            location.setCity(getString(R.string.location_undefined));
+            location.setCountry(getString(R.string.location_undefined));
+        }
+        return location;
     }
 
     private boolean internetAvailable() {
