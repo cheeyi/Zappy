@@ -56,6 +56,13 @@ public class MainActivity extends ActionBarActivity {
                         Log.v(TAG, rawJSON);
                         if (response.isSuccessful()) {
                             currentWeather = getWeatherDetails(rawJSON);
+//                            if (currentWeather.getTemp() > 70) {
+//                                Log.v(TAG, "MEOW");
+//                                getWindow().getDecorView().setBackgroundColor(Color.parseColor("#ffff6961"));
+//                            } else if (currentWeather.getTemp() > 50) {
+//                                getWindow().getDecorView().setBackgroundColor(Color.parseColor("#fffc970b"));
+//                            } else {
+//                                getWindow().getDecorView().setBackgroundColor(Color.parseColor("#ff779ecb"));
                         } else {
                             alertError();
                         }
