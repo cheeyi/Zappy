@@ -68,10 +68,20 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
             }
         });
 
-        Log.v(TAG, "Building API client!");
         buildGoogleApiClient();
-        Log.v(TAG, "Built API client");
 
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mGoogleApiClient.connect();
+    }
+
+    @Override
+    protected void onStop() {
+        mGoogleApiClient.disconnect();
+        super.onStop();
     }
 
     protected synchronized void buildGoogleApiClient() {
