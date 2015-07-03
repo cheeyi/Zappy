@@ -90,8 +90,8 @@ public class WeatherNow {
         this.time = time;
     }
 
-    public double getTemp() {
-        return temp;
+    public int getTemp() {
+        return (int)Math.round(temp);
     }
 
     public void setTemp(double temp) {
@@ -106,8 +106,8 @@ public class WeatherNow {
         this.humidity = humidity;
     }
 
-    public double getPrecip() {
-        return precip;
+    public double getPrecip() { // get a rounded percentage of precipitation
+        return (int)Math.round(precip*100);
     }
 
     public void setPrecip(double precip) {

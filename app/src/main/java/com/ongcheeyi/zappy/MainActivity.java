@@ -1,6 +1,9 @@
 package com.ongcheeyi.zappy;
 
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
+import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.support.v7.app.ActionBarActivity;
@@ -8,8 +11,14 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationServices;
 import com.squareup.okhttp.Call;
 import com.squareup.okhttp.Callback;
 import com.squareup.okhttp.OkHttpClient;
@@ -21,23 +30,95 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 
+import butterknife.Bind;
+import butterknife.ButterKnife;
 
-public class MainActivity extends ActionBarActivity {
+
+public class MainActivity extends ActionBarActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     public static final String TAG = MainActivity.class.getSimpleName();
 
     private WeatherNow currentWeather;
+    GoogleApiClient mGoogleApiClient;
+    double latitude, longitude;
+
+    @Bind(R.id.timeLabel) TextView timeLabel; // annotation by ButterKnife is preferred
+    @Bind(R.id.temperatureLabel) TextView tempLabel;
+    @Bind(R.id.humidityValue) TextView humidityValue;
+    @Bind(R.id.precipValue) TextView precipValue;
+    @Bind(R.id.summaryLabel) TextView summaryLabel;
+    @Bind(R.id.iconImageView) ImageView iconImageView;
+    @Bind(R.id.refreshImageView) ImageView refreshImageView;
+    //old school method: tempLabel = (TextView)findViewById(R.id.temperatureLabel);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        ButterKnife.bind(this); // achieve all binding using a single line
 
-        String forecastAPIKey = "716daa82001a49e90ba44b206f6e3486";
-        double latitude = 44.970591;
-        double longitude = -93.223;
-        String forecastURL = "https://api.forecast.io/forecast/716daa82001a49e90ba44b206f6e3486/"
-                + latitude + "," + longitude;
+        // default
+        latitude = 44.970591;
+        longitude = -93.223;
+
+        refreshImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getWeather(latitude, longitude); // refresh weather
+            }
+        });
+
+        Log.v(TAG, "Building API client!");
+        buildGoogleApiClient();
+        Log.v(TAG, "Built API client");
+
+    }
+
+    protected synchronized void buildGoogleApiClient() {
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
+    }
+
+    @Override
+    public void onConnected(Bundle connectionHint) {
+        // Connected to Google Play services!
+        // The good stuff goes here.
+        Log.v(TAG, "Connected to GPlay!");
+        Location lastLocation = LocationServices.FusedLocationApi.getLastLocation(
+                mGoogleApiClient);
+        if (lastLocation != null) {
+            latitude = lastLocation.getLatitude();
+            Log.v(TAG, latitude+"");
+            longitude = lastLocation.getLongitude();
+            getWeather(latitude,longitude);
+        }
+    }
+
+    @Override
+    public void onConnectionSuspended(int cause) {
+        // The connection has been interrupted.
+        // Disable any UI components that depend on Google APIs
+        // until onConnected() is called.
+        Log.v(TAG, "Connected to GPlay is interrupted!");
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult result) {
+        // This callback is important for handling errors that
+        // may occur while attempting to connect with Google.
+        //
+        // More about this in the 'Handle Connection Failures' section.
+        Log.v(TAG, "Connected to GPlay has failed!");
+
+    }
+
+
+    private void getWeather(double latitude, double longitude) {
+
+        String forecastURL = getString(R.string.forecast_api_url_prefix) + latitude + "," + longitude;
 
         if (internetAvailable()) {
             OkHttpClient client = new OkHttpClient();
@@ -46,7 +127,7 @@ public class MainActivity extends ActionBarActivity {
             call.enqueue(new Callback() {
                 @Override
                 public void onFailure(Request request, IOException e) {
-
+                    Log.v(TAG, getString(R.string.response_failure));
                 }
 
                 @Override
@@ -56,13 +137,24 @@ public class MainActivity extends ActionBarActivity {
                         Log.v(TAG, rawJSON);
                         if (response.isSuccessful()) {
                             currentWeather = getWeatherDetails(rawJSON);
-//                            if (currentWeather.getTemp() > 70) {
-//                                Log.v(TAG, "MEOW");
-//                                getWindow().getDecorView().setBackgroundColor(Color.parseColor("#ffff6961"));
-//                            } else if (currentWeather.getTemp() > 50) {
-//                                getWindow().getDecorView().setBackgroundColor(Color.parseColor("#fffc970b"));
-//                            } else {
-//                                getWindow().getDecorView().setBackgroundColor(Color.parseColor("#ff779ecb"));
+                            // the following is necessary  because onResponse is running
+                            // on a different thread, and a merge to the main flow is needed
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() { // this runs on the main UI thread
+                                    updateDisplay();
+                                    if (currentWeather.getTemp() > 70) {
+                                        getWindow().getDecorView().setBackgroundColor
+                                                (Color.parseColor(getString(R.string.pastel_red)));
+                                    } else if (currentWeather.getTemp() > 50) {
+                                        getWindow().getDecorView().setBackgroundColor
+                                                (Color.parseColor(getString(R.string.pastel_orange)));
+                                    } else {
+                                        getWindow().getDecorView().setBackgroundColor
+                                                (Color.parseColor(getString(R.string.pastel_blue)));
+                                    }
+                                }
+                            });
                         } else {
                             alertError();
                         }
@@ -77,6 +169,17 @@ public class MainActivity extends ActionBarActivity {
             Toast.makeText(this, getString(R.string.network_unavailable),
                     Toast.LENGTH_LONG).show();
         }
+    }
+
+    private void updateDisplay() { // refreshes all UI elements
+        Drawable drawable = getResources().getDrawable(currentWeather.getIconId());
+
+        tempLabel.setText(currentWeather.getTemp() + ""); // hack to pass in double as 'text'
+        timeLabel.setText(currentWeather.getTime() + "");
+        humidityValue.setText(currentWeather.getHumidity() + "");
+        precipValue.setText(currentWeather.getPrecip() + "%");
+        iconImageView.setImageDrawable(drawable);
+        summaryLabel.setText(currentWeather.getSummary());
     }
 
     private WeatherNow getWeatherDetails(String rawJSON) throws JSONException {

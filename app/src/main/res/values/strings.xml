@@ -8,4 +8,10 @@
     <string name="error_confirm">OK</string>
     <string name="network_unavailable">Network is unavailable!</string>
     <string name="location_name">Minneapolis, MN</string>
+    <string name="api_key">716daa82001a49e90ba44b206f6e3486</string>
+    <string name="forecast_api_url_prefix">https://api.forecast.io/forecast/716daa82001a49e90ba44b206f6e3486/</string>
+    <string name="response_failure">Failed to get response from API server.</string>
+    <string name="pastel_orange">#fffc970b</string>
+    <string name="pastel_red">#ffff6961</string>
+    <string name="pastel_blue">#ff779ecb</string>
 </resources>
