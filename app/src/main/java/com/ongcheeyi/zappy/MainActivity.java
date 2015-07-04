@@ -1,7 +1,10 @@
 package com.ongcheeyi.zappy;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.IntentSender;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.location.Criteria;
@@ -9,6 +12,7 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -43,7 +47,7 @@ import butterknife.Bind;
 import butterknife.ButterKnife;
 
 
-public class MainActivity extends ActionBarActivity implements GoogleApiClient.ConnectionCallbacks,
+public class MainActivity extends Activity implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
     private LocationRequest locationRequest;
@@ -55,6 +59,7 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
     private Location gpsLocation; // used in case Google Play Services not installed
     private GoogleApiClient mGoogleApiClient;
     private LocationManager locationManager;
+    private boolean metric;
     double latitude, longitude;
 
     @Bind(R.id.timeLabel) TextView timeLabel; // annotation by ButterKnife is preferred
@@ -74,6 +79,10 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this); // achieve all binding using a single line
         progressBar.setVisibility(View.INVISIBLE); // invisible if user not refreshing
+
+        PreferenceManager.setDefaultValues(this, R.xml.preferences, false); // load default prefs
+
+
 
         locationRequest = LocationRequest.create()
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
@@ -98,6 +107,8 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
     @Override
     protected void onResume() {
         super.onResume();
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        metric = sharedPref.getBoolean("metric", false);
         mGoogleApiClient.connect();
     }
 
@@ -317,7 +328,11 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
         YoYo.with(Techniques.Tada)
                 .duration(700)
                 .playOn(tempLabel);
-        tempLabel.setText(Math.round(convertFahrenheitToCelcius(currentWeather.getTemp())) + ""); // hack to pass in double as 'text'
+        if(metric) {
+            tempLabel.setText(Math.round(convertFahrenheitToCelcius(currentWeather.getTemp())) + ""); // hack to pass in double as 'text'
+        } else {
+            tempLabel.setText(currentWeather.getTemp() + "");
+        }
         timeLabel.setText(currentWeather.formatTime() + "");
         humidityValue.setText(currentWeather.getHumidity() + "%");
         precipValue.setText(currentWeather.getPrecip() + "%");
@@ -389,5 +404,10 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
     public void onLocationChanged(Location location) {
         Log.v(TAG, "Location changed, updating accordingly.");
         updateLocation();
+    }
+
+    public void startSettingsActivity(View view) {
+        Intent intent = new Intent(this, SettingsActivity.class);
+        startActivity(intent);
     }
 }
