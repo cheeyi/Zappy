@@ -1,4 +1,6 @@
-package com.ongcheeyi.zappy;
+package com.ongcheeyi.zappy.weather;
+
+import com.ongcheeyi.zappy.R;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

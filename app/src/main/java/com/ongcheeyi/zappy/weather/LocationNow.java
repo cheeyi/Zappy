@@ -1,4 +1,4 @@
-package com.ongcheeyi.zappy;
+package com.ongcheeyi.zappy.weather;
 
 /**
  * Created by CheeYi on 7/3/15.
