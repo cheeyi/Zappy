@@ -22,6 +22,8 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.daimajia.androidanimations.library.Techniques;
+import com.daimajia.androidanimations.library.YoYo;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
@@ -316,6 +318,9 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
     private void updateDisplay() { // refreshes all UI elements
         Drawable drawable = getResources().getDrawable(currentWeather.getIconId());
 
+        YoYo.with(Techniques.Tada)
+                .duration(700)
+                .playOn(tempLabel);
         tempLabel.setText(Math.round(convertFahrenheitToCelcius(currentWeather.getTemp())) + ""); // hack to pass in double as 'text'
         timeLabel.setText(currentWeather.formatTime() + "");
         humidityValue.setText(currentWeather.getHumidity() + "%");
