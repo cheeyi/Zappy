@@ -18,6 +18,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -66,6 +67,7 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
     @Bind(R.id.iconImageView) ImageView iconImageView;
     @Bind(R.id.refreshImageView) ImageView refreshImageView;
     @Bind(R.id.locationLabel) TextView locationLabel;
+    @Bind(R.id.progressBar) ProgressBar progressBar;
     //old school method: tempLabel = (TextView)findViewById(R.id.temperatureLabel);
 
     @Override
@@ -73,6 +75,7 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this); // achieve all binding using a single line
+        progressBar.setVisibility(View.INVISIBLE); // invisible if user not refreshing
 
         // default to Minneapolis
         latitude = 44.970591;
@@ -90,15 +93,17 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
+    protected void onResume() {
+        super.onResume();
         mGoogleApiClient.connect();
     }
 
     @Override
-    protected void onStop() {
-        mGoogleApiClient.disconnect();
-        super.onStop();
+    protected void onPause() {
+        super.onPause();
+        if (mGoogleApiClient.isConnected()) {
+            mGoogleApiClient.disconnect();
+        }
     }
 
     protected synchronized void buildGoogleApiClient() {
@@ -130,8 +135,8 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
                 longitude = gpsLocation.getLongitude();
             }
         }
-        getWeather(latitude,longitude); // also updates UI elements
-        getAddress(latitude,longitude);
+        getWeather(latitude, longitude); // also updates UI elements
+        getAddress(latitude, longitude);
     }
 
     @Override
@@ -223,11 +228,23 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
         }
     }
 
+    private void refreshAnimation() {
+        // simulate a refresh animation using the circular progress bar (spinner)
+        if (progressBar.getVisibility() == View.VISIBLE) {
+            progressBar.setVisibility(View.INVISIBLE);
+            refreshImageView.setVisibility(View.VISIBLE);
+        } else {
+            progressBar.setVisibility(View.VISIBLE);
+            refreshImageView.setVisibility(View.INVISIBLE);
+        }
+    }
+
     private void getWeather(double latitude, double longitude) {
 
         String forecastURL = getString(R.string.forecast_api_url_prefix) + latitude + "," + longitude;
 
         if (internetAvailable()) {
+            refreshAnimation(); // provide visual feedback of refresh
             OkHttpClient client = new OkHttpClient();
             Request request = new Request.Builder().url(forecastURL).build();
             Call call = client.newCall(request);
@@ -235,6 +252,12 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
                 @Override
                 public void onFailure(Request request, IOException e) {
                     Log.v(TAG, getString(R.string.response_failure));
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            refreshAnimation();
+                        }
+                    });
                 }
 
                 @Override
@@ -260,6 +283,7 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
                                         getWindow().getDecorView().setBackgroundColor
                                                 (Color.parseColor(getString(R.string.pastel_blue)));
                                     }
+                                    refreshAnimation();
                                 }
                             });
                         } else {
