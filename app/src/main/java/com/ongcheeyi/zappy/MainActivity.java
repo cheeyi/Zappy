@@ -24,6 +24,8 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.squareup.okhttp.Call;
 import com.squareup.okhttp.Callback;
@@ -43,12 +45,10 @@ import butterknife.Bind;
 import butterknife.ButterKnife;
 
 
-public class MainActivity extends ActionBarActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+public class MainActivity extends ActionBarActivity implements GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
-    /*
-     * Define a request code to send to Google Play services
-     * This code is returned in Activity.onActivityResult
-     */
+    private LocationRequest locationRequest;
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
     public static final String TAG = MainActivity.class.getSimpleName();
 
@@ -77,6 +77,11 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
         ButterKnife.bind(this); // achieve all binding using a single line
         progressBar.setVisibility(View.INVISIBLE); // invisible if user not refreshing
 
+        locationRequest = LocationRequest.create()
+                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+                .setInterval(10 * 1000)        // 10 seconds, in milliseconds
+                .setFastestInterval(1 * 1000); // 1 second, in milliseconds
+
         // default to Minneapolis
         latitude = 44.970591;
         longitude = -93.223;
@@ -102,6 +107,8 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
     protected void onPause() {
         super.onPause();
         if (mGoogleApiClient.isConnected()) {
+            // Release resources
+            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
             mGoogleApiClient.disconnect();
         }
     }
@@ -129,8 +136,12 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
             latitude = lastLocation.getLatitude();
             longitude = lastLocation.getLongitude();
         } else {
-            Log.v(TAG,"Location null! Trying GPS.");
+            // Invoke a location update request, if this succeeds we get a new location and the
+            // UI will be updated by means of the callback method onLocationChanged()
+            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationRequest, this);
+
             if (gpsLocation != null) {
+                Log.v(TAG,"Cannot request location update! Trying GPS as last resort.");
                 latitude = gpsLocation.getLatitude();
                 longitude = gpsLocation.getLongitude();
             }
@@ -373,4 +384,9 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
         return ((celsius * 9) / 5) + 32;
     }
 
+    @Override
+    public void onLocationChanged(Location location) {
+        Log.v(TAG, "Location changed, updating accordingly.");
+        updateLocation();
+    }
 }
