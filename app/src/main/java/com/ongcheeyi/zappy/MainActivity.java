@@ -74,7 +74,7 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this); // achieve all binding using a single line
 
-        // default
+        // default to Minneapolis
         latitude = 44.970591;
         longitude = -93.223;
 
@@ -125,10 +125,12 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
             longitude = lastLocation.getLongitude();
         } else {
             Log.v(TAG,"Location null! Trying GPS.");
-            latitude = gpsLocation.getLatitude();
-            longitude = gpsLocation.getLongitude();
+            if (gpsLocation != null) {
+                latitude = gpsLocation.getLatitude();
+                longitude = gpsLocation.getLongitude();
+            }
         }
-        getWeather(latitude,longitude);
+        getWeather(latitude,longitude); // also updates UI elements
         getAddress(latitude,longitude);
     }
 
@@ -173,6 +175,7 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
             Criteria criteria = new Criteria();
             String provider = locationManager.getBestProvider(criteria, false);
             gpsLocation = locationManager.getLastKnownLocation(provider);
+            updateLocation();
         }
     }
 
@@ -278,9 +281,9 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
     private void updateDisplay() { // refreshes all UI elements
         Drawable drawable = getResources().getDrawable(currentWeather.getIconId());
 
-        tempLabel.setText(currentWeather.getTemp() + ""); // hack to pass in double as 'text'
+        tempLabel.setText(Math.round(convertFahrenheitToCelcius(currentWeather.getTemp())) + ""); // hack to pass in double as 'text'
         timeLabel.setText(currentWeather.formatTime() + "");
-        humidityValue.setText(currentWeather.getHumidity() + "");
+        humidityValue.setText(currentWeather.getHumidity() + "%");
         precipValue.setText(currentWeather.getPrecip() + "%");
         iconImageView.setImageDrawable(drawable);
         summaryLabel.setText(currentWeather.getSummary());
@@ -336,5 +339,14 @@ public class MainActivity extends ActionBarActivity implements GoogleApiClient.C
         dialog.show(getFragmentManager(), "error_dialog");
     }
 
+    // Converts to celcius
+    private double convertFahrenheitToCelcius(double fahrenheit) {
+        return ((fahrenheit - 32) * 5 / 9);
+    }
+
+    // Converts to fahrenheit
+    private double convertCelciusToFahrenheit(double celsius) {
+        return ((celsius * 9) / 5) + 32;
+    }
 
 }

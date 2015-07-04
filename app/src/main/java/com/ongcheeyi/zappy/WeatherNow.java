@@ -110,7 +110,7 @@ public class WeatherNow {
     }
 
     public double getHumidity() {
-        return humidity;
+        return (int)Math.round(humidity*100);
     }
 
     public void setHumidity(double humidity) {
