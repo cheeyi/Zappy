@@ -31,6 +31,8 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.ongcheeyi.zappy.weather.Forecast;
 import com.ongcheeyi.zappy.weather.LocationNow;
+import com.ongcheeyi.zappy.weather.WeatherDaily;
+import com.ongcheeyi.zappy.weather.WeatherHourly;
 import com.ongcheeyi.zappy.weather.WeatherNow;
 import com.squareup.okhttp.Call;
 import com.squareup.okhttp.Callback;
@@ -46,6 +48,7 @@ import java.io.IOException;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 
 
 public class MainActivity extends Activity implements GoogleApiClient.ConnectionCallbacks,
@@ -66,7 +69,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
     public static final String TAG = MainActivity.class.getSimpleName();
 
-    private WeatherNow currentWeather;
+    private Forecast forecast;
     private LocationNow currentLocation;
     private Location gpsLocation; // used in case Google Play Services not installed
     private GoogleApiClient mGoogleApiClient;
@@ -161,7 +164,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         // The connection has been interrupted.
         // Disable any UI components that depend on Google APIs
         // until onConnected() is called.
-        Log.v(TAG, "Connected to GPlay is interrupted!");
+        Log.v(TAG, "Connection to Google Play Services was interrupted.");
     }
 
     @Override
@@ -220,7 +223,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                 public void onResponse(Response response) throws IOException {
                     try {
                         String rawJSON = response.body().string();
-                        if (response.isSuccessful()) {
+                        if (response.isSuccessful()) { // location found
                             currentLocation = getLocationDetails(rawJSON);
                             runOnUiThread(new Runnable() {
                                 @Override
@@ -281,17 +284,18 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                     try {
                         String rawJSON = response.body().string();
                         if (response.isSuccessful()) {
-                            currentWeather = getWeatherDetails(rawJSON);
-                            // the following is necessary  because onResponse is running
-                            // on a different thread, and a merge to the main flow is needed
+                            forecast = getForecastDetails(rawJSON);
+
+                            // the following is necessary  because this method is running
+                            // on a background (async) thread, and a merge to the main flow is needed
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() { // this runs on the main UI thread
                                     updateDisplay();
-                                    if (currentWeather.getTemp() > 70) {
+                                    if (forecast.getCurrentWeather().getTemp() > 70) {
                                         getWindow().getDecorView().setBackgroundColor
                                                 (Color.parseColor(getString(R.string.pastel_red)));
-                                    } else if (currentWeather.getTemp() > 50) {
+                                    } else if (forecast.getCurrentWeather().getTemp() > 50) {
                                         getWindow().getDecorView().setBackgroundColor
                                                 (Color.parseColor(getString(R.string.pastel_orange)));
                                     } else {
@@ -318,6 +322,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     }
 
     private void updateDisplay() { // refreshes all UI elements
+        WeatherNow currentWeather = forecast.getCurrentWeather();
         Drawable drawable = getResources().getDrawable(currentWeather.getIconId());
 
         YoYo.with(Techniques.Tada) // provides user with visual feedback of temp being refreshed
@@ -339,7 +344,54 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     private Forecast getForecastDetails(String rawJSON) throws JSONException {
         Forecast forecast = new Forecast();
         forecast.setCurrentWeather(getWeatherDetails(rawJSON));
+        forecast.setWeatherHourly(getWeatherHourly(rawJSON));
+        forecast.setWeatherDaily(getWeatherDaily(rawJSON));
+
         return forecast;
+    }
+
+    private WeatherDaily[] getWeatherDaily(String rawJSON) throws JSONException {
+        String timezone = new JSONObject(rawJSON).getString("timezone");
+        JSONObject daily = new JSONObject(rawJSON).getJSONObject("daily");
+        JSONArray data = daily.getJSONArray("data");
+
+        WeatherDaily[] dailyWeather = new WeatherDaily[data.length()];
+        for (int i = 0; i < data.length(); i++) {
+            JSONObject day = data.getJSONObject(i);
+
+            WeatherDaily dayInfo = new WeatherDaily();
+            dayInfo.setIcon(day.getString("icon"));
+            dayInfo.setSummary(day.getString("summary"));
+            dayInfo.setMaxTemp(day.getDouble("temperatureMax"));
+            dayInfo.setTime(day.getLong("time"));
+            dayInfo.setTimezone(timezone);
+
+            dailyWeather[i] = dayInfo;
+        }
+
+        return dailyWeather;
+    }
+
+    private WeatherHourly[] getWeatherHourly(String rawJSON) throws JSONException {
+        String timezone = new JSONObject(rawJSON).getString("timezone");
+        JSONObject hourly = new JSONObject(rawJSON).getJSONObject("hourly");
+        JSONArray data = hourly.getJSONArray("data");
+
+        WeatherHourly[] hourlyWeather = new WeatherHourly[data.length()];
+        for (int i = 0; i < data.length(); i++) {
+            JSONObject hour = data.getJSONObject(i);
+
+            WeatherHourly hourInfo = new WeatherHourly();
+            hourInfo.setIcon(hour.getString("icon"));
+            hourInfo.setSummary(hour.getString("summary"));
+            hourInfo.setTemp(hour.getDouble("temperature"));
+            hourInfo.setTime(hour.getLong("time"));
+            hourInfo.setTimezone(timezone);
+
+            hourlyWeather[i] = hourInfo;
+        }
+
+        return hourlyWeather;
     }
 
     private WeatherNow getWeatherDetails(String rawJSON) throws JSONException {
@@ -405,4 +457,11 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         Intent intent = new Intent(this, SettingsActivity.class);
         startActivity(intent);
     }
+
+    @OnClick(R.id.dailyButton) // Butterknife magic
+    public void startDailyActivity(View view) {
+        Intent intent = new Intent(this, DailyForecastActivity.class);
+        startActivity(intent);
+    }
+
 }

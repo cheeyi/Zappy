@@ -25,9 +25,17 @@
         </activity>
         <activity
             android:name=".SettingsActivity"
+            android:launchMode="singleTask"
             android:parentActivityName=".MainActivity"
-            android:screenOrientation="portrait"
-            android:launchMode="singleTask" />
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".DailyForecastActivity"
+            android:label="@string/title_activity_daily_forecast"
+            android:parentActivityName=".MainActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.ongcheeyi.zappy.MainActivity" />
+        </activity>
     </application>
 
 </manifest>

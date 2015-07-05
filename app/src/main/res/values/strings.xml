@@ -14,6 +14,9 @@
     <string name="pastel_orange">#fffc970b</string>
     <string name="pastel_red">#ffff6961</string>
     <string name="pastel_blue">#ff779ecb</string>
+    <string name="semi_transparent_white">#40ffffff</string>
     <string name="location_undefined">Undefined</string>
     <string name="google_api_key">AIzaSyAzSVjefE6f_87YsU5KK8UbNPTATE6q6Rc</string>
+    <string name="title_activity_daily_forecast">DailyForecastActivity</string>
+    <string name="no_daily_forecast">There is no data to display</string>
 </resources>
