@@ -29,6 +29,7 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.ongcheeyi.zappy.weather.Forecast;
 import com.ongcheeyi.zappy.weather.LocationNow;
 import com.ongcheeyi.zappy.weather.WeatherNow;
 import com.squareup.okhttp.Call;
@@ -50,6 +51,17 @@ import butterknife.ButterKnife;
 public class MainActivity extends Activity implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
+    @Bind(R.id.timeLabel) TextView timeLabel; // annotation by ButterKnife
+    @Bind(R.id.temperatureLabel) TextView tempLabel;
+    @Bind(R.id.humidityValue) TextView humidityValue;
+    @Bind(R.id.precipValue) TextView precipValue;
+    @Bind(R.id.summaryLabel) TextView summaryLabel;
+    @Bind(R.id.iconImageView) ImageView iconImageView;
+    @Bind(R.id.refreshImageView) ImageView refreshImageView;
+    @Bind(R.id.locationLabel) TextView locationLabel;
+    @Bind(R.id.progressBar) ProgressBar progressBar;
+    //lines above replace boilerplate: tempLabel = (TextView)findViewById(R.id.temperatureLabel);
+
     private LocationRequest locationRequest;
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
     public static final String TAG = MainActivity.class.getSimpleName();
@@ -62,17 +74,6 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     private boolean metric;
     double latitude, longitude;
 
-    @Bind(R.id.timeLabel) TextView timeLabel; // annotation by ButterKnife is preferred
-    @Bind(R.id.temperatureLabel) TextView tempLabel;
-    @Bind(R.id.humidityValue) TextView humidityValue;
-    @Bind(R.id.precipValue) TextView precipValue;
-    @Bind(R.id.summaryLabel) TextView summaryLabel;
-    @Bind(R.id.iconImageView) ImageView iconImageView;
-    @Bind(R.id.refreshImageView) ImageView refreshImageView;
-    @Bind(R.id.locationLabel) TextView locationLabel;
-    @Bind(R.id.progressBar) ProgressBar progressBar;
-    //old school method: tempLabel = (TextView)findViewById(R.id.temperatureLabel);
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -81,8 +82,6 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         progressBar.setVisibility(View.INVISIBLE); // invisible if user not refreshing
 
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false); // load default prefs
-
-
 
         locationRequest = LocationRequest.create()
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
@@ -99,9 +98,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                 updateLocation();
             }
         });
-
         buildGoogleApiClient();
-
     }
 
     @Override
@@ -134,7 +131,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     public void onConnected(Bundle connectionHint) {
         // Connected to Google Play services!
         // The good stuff goes here.
-        Log.v(TAG, "Connected to GPlay!");
+        Log.v(TAG, "Connected to Google Play Services!");
         updateLocation();
     }
 
@@ -205,10 +202,9 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     }
 
     public void getAddress(double latitude, double longitude) {
-        String googleApiKey = "AIzaSyAzSVjefE6f_87YsU5KK8UbNPTATE6q6Rc";
+        String googleApiKey = getString(R.string.google_api_key);
         String locationUrl = "https://maps.googleapis.com/maps/api/geocode/json?latlng=" + latitude +
                 "," + longitude + "&key=" + googleApiKey;
-        Log.v(TAG,locationUrl);
 
         if (internetAvailable()) {
             OkHttpClient client = new OkHttpClient();
@@ -284,7 +280,6 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                 public void onResponse(Response response) throws IOException {
                     try {
                         String rawJSON = response.body().string();
-                        Log.v(TAG, rawJSON);
                         if (response.isSuccessful()) {
                             currentWeather = getWeatherDetails(rawJSON);
                             // the following is necessary  because onResponse is running
@@ -325,20 +320,26 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     private void updateDisplay() { // refreshes all UI elements
         Drawable drawable = getResources().getDrawable(currentWeather.getIconId());
 
-        YoYo.with(Techniques.Tada)
+        YoYo.with(Techniques.Tada) // provides user with visual feedback of temp being refreshed
                 .duration(700)
                 .playOn(tempLabel);
+
         if(metric) {
-            tempLabel.setText(Math.round(convertFahrenheitToCelcius(currentWeather.getTemp())) + ""); // hack to pass in double as 'text'
-        } else {
+            tempLabel.setText(Math.round(convertFahrenheitToCelcius(currentWeather.getTemp())) + "");
+        } else { // Fahrenheit
             tempLabel.setText(currentWeather.getTemp() + "");
         }
         timeLabel.setText(currentWeather.formatTime() + "");
-        humidityValue.setText(currentWeather.getHumidity() + "%");
-        precipValue.setText(currentWeather.getPrecip() + "%");
+        humidityValue.setText((int)currentWeather.getHumidity() + "%"); // get rid of .0s
+        precipValue.setText((int)currentWeather.getPrecip() + "%");
         iconImageView.setImageDrawable(drawable);
         summaryLabel.setText(currentWeather.getSummary());
+    }
 
+    private Forecast getForecastDetails(String rawJSON) throws JSONException {
+        Forecast forecast = new Forecast();
+        forecast.setCurrentWeather(getWeatherDetails(rawJSON));
+        return forecast;
     }
 
     private WeatherNow getWeatherDetails(String rawJSON) throws JSONException {
@@ -354,7 +355,6 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         weather.setTemp(forecast.getDouble("temperature"));
         weather.setTimezone(timezone);
 
-        Log.d(TAG, weather.formatTime());
         return weather;
     }
 
@@ -393,11 +393,6 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     // Converts to celcius
     private double convertFahrenheitToCelcius(double fahrenheit) {
         return ((fahrenheit - 32) * 5 / 9);
-    }
-
-    // Converts to fahrenheit
-    private double convertCelciusToFahrenheit(double celsius) {
-        return ((celsius * 9) / 5) + 32;
     }
 
     @Override
