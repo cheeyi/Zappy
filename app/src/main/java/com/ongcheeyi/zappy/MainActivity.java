@@ -54,6 +54,10 @@ import butterknife.OnClick;
 public class MainActivity extends Activity implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
+    private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
+    public static final String TAG = MainActivity.class.getSimpleName();
+    public static final String DAILY = "DAILY_FORECAST";
+
     @Bind(R.id.timeLabel) TextView timeLabel; // annotation by ButterKnife
     @Bind(R.id.temperatureLabel) TextView tempLabel;
     @Bind(R.id.humidityValue) TextView humidityValue;
@@ -66,9 +70,6 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     //lines above replace boilerplate: tempLabel = (TextView)findViewById(R.id.temperatureLabel);
 
     private LocationRequest locationRequest;
-    private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
-    public static final String TAG = MainActivity.class.getSimpleName();
-
     private Forecast forecast;
     private LocationNow currentLocation;
     private Location gpsLocation; // used in case Google Play Services not installed
@@ -225,6 +226,11 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                         String rawJSON = response.body().string();
                         if (response.isSuccessful()) { // location found
                             currentLocation = getLocationDetails(rawJSON);
+
+                            while(forecast == null); // TODO: bad code
+                            forecast.setLocation(currentLocation.getCity());
+                            forecast.insertLocation();
+
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() { // this runs on the main UI thread
@@ -365,7 +371,9 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             dayInfo.setMaxTemp(day.getDouble("temperatureMax"));
             dayInfo.setTime(day.getLong("time"));
             dayInfo.setTimezone(timezone);
-
+            if (currentLocation != null) {
+                dayInfo.setLocation(currentLocation.getCity());
+            }
             dailyWeather[i] = dayInfo;
         }
 
@@ -416,7 +424,6 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         LocationNow location = new LocationNow();
 
         if (results.length() > 0 && resultsArray.length() > 0) {
-
             location.setCity(results.getJSONObject(3).getString("short_name"));
             location.setCountry(results.getJSONObject(6).getString("short_name"));
         } else {
@@ -461,6 +468,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     @OnClick(R.id.dailyButton) // Butterknife magic
     public void startDailyActivity(View view) {
         Intent intent = new Intent(this, DailyForecastActivity.class);
+        intent.putExtra(DAILY, forecast.getWeatherDaily());
         startActivity(intent);
     }
 

@@ -19,4 +19,6 @@
     <string name="google_api_key">AIzaSyAzSVjefE6f_87YsU5KK8UbNPTATE6q6Rc</string>
     <string name="title_activity_daily_forecast">DailyForecastActivity</string>
     <string name="no_daily_forecast">There is no data to display</string>
+    <color name="pastel_brown">#ff836953</color>
+    <color name="dark_orange">#fff25019</color>
 </resources>
