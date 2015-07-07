@@ -1,7 +1,10 @@
 package com.ongcheeyi.zappy.adapters;
 
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,6 +12,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.ongcheeyi.zappy.MainActivity;
 import com.ongcheeyi.zappy.R;
 import com.ongcheeyi.zappy.weather.WeatherHourly;
 
@@ -21,11 +25,14 @@ public class HourAdapter extends RecyclerView.Adapter<HourAdapter.HourViewHolder
 
     private WeatherHourly[] hours;
     private Context context;
+    SharedPreferences sharedPref;
+    boolean metric;
 
     public HourAdapter(Context context, WeatherHourly[] hours) {
         this.hours = hours;
         this.context = context;
-
+        sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+        metric = sharedPref.getBoolean("metric", false);
     }
 
     @Override
@@ -67,7 +74,12 @@ public class HourAdapter extends RecyclerView.Adapter<HourAdapter.HourViewHolder
         public void bindHour(WeatherHourly hour) {
             timeLabel.setText(hour.getHour());
             summaryLabel.setText(hour.getSummary());
-            tempLabel.setText(hour.getTemp()+"");
+            if(metric) {
+                tempLabel.setText(hour.getCelsius()+"");
+            }
+            else {
+                tempLabel.setText(hour.getTemp()+"");
+            }
             iconImageView.setImageResource(hour.getIconId());
         }
 

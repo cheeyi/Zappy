@@ -1,7 +1,9 @@
 package com.ongcheeyi.zappy.adapters;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.media.Image;
+import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,10 +21,14 @@ public class DayAdapter extends BaseAdapter {
 
     private Context mContext;
     private WeatherDaily[] days;
+    SharedPreferences sharedPref;
+    boolean metric;
 
     public DayAdapter(Context context, WeatherDaily[] days) {
         mContext = context;
         this.days = days;
+        sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+        metric = sharedPref.getBoolean("metric", false);
     }
     @Override
     public int getCount() {
@@ -65,7 +71,12 @@ public class DayAdapter extends BaseAdapter {
         // populate UI with info of current day (at position position)
         WeatherDaily day = days[position];
         holder.iconImageView.setImageResource(day.getIconId());
-        holder.temperatureLabel.setText(day.getMaxTemp() + "");
+        if(metric) {
+            holder.temperatureLabel.setText(day.getCelsius()+"");
+        }
+        else {
+            holder.temperatureLabel.setText(day.getMaxTemp() + "");
+        }
         crap.locationLabel.setText(day.getLocation());
         if(position == 0) {
             // current day

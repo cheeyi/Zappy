@@ -90,4 +90,9 @@ public class Forecast {
 
         return iconId;
     }
+
+    // Converts to celcius
+    public static double convertFahrenheitToCelcius(double fahrenheit) {
+        return ((fahrenheit - 32) * 5 / 9);
+    }
 }

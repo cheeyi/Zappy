@@ -52,6 +52,10 @@ public class WeatherHourly implements Parcelable {
         this.temp = temp;
     }
 
+    public int getCelsius() {
+        return (int)Math.round(Forecast.convertFahrenheitToCelcius(temp));
+    }
+
     public String getIcon() {
         return icon;
     }

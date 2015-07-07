@@ -66,6 +66,10 @@ public class WeatherDaily implements Parcelable {
         return (int)Math.round(maxTemp);
     }
 
+    public int getCelsius() {
+        return (int)Math.round(Forecast.convertFahrenheitToCelcius(maxTemp));
+    }
+
     public void setMaxTemp(double maxTemp) {
         this.maxTemp = maxTemp;
     }

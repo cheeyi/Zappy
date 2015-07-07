@@ -425,7 +425,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
         if (results.length() > 0 && resultsArray.length() > 0) {
             location.setCity(results.getJSONObject(3).getString("short_name"));
-            location.setCountry(results.getJSONObject(6).getString("short_name"));
+            //location.setCountry(results.getJSONObject(6).getString("short_name"));
         } else {
             location.setCity(getString(R.string.location_undefined));
             location.setCountry(getString(R.string.location_undefined));
