@@ -36,6 +36,14 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.ongcheeyi.zappy.MainActivity" />
         </activity>
+        <activity
+            android:name=".HourlyForecastActivity"
+            android:label="@string/title_activity_hourly_forecast"
+            android:parentActivityName=".MainActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.ongcheeyi.zappy.MainActivity" />
+        </activity>
     </application>
 
 </manifest>

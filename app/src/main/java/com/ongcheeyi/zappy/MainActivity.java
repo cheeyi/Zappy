@@ -13,7 +13,6 @@ import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.preference.PreferenceManager;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -57,6 +56,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
     public static final String TAG = MainActivity.class.getSimpleName();
     public static final String DAILY = "DAILY_FORECAST";
+    public static final String HOURLY = "HOURLY_FORECAST";
 
     @Bind(R.id.timeLabel) TextView timeLabel; // annotation by ButterKnife
     @Bind(R.id.temperatureLabel) TextView tempLabel;
@@ -470,6 +470,14 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         Intent intent = new Intent(this, DailyForecastActivity.class);
         intent.putExtra(DAILY, forecast.getWeatherDaily());
         startActivity(intent);
+    }
+
+    @OnClick(R.id.hourlyButton)
+    public void startHourlyActivity(View view) {
+        Intent intent = new Intent(this, HourlyForecastActivity.class);
+        intent.putExtra(HOURLY, forecast.getWeatherHourly());
+        startActivity(intent);
+
     }
 
 }
