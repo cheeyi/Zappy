@@ -1,11 +1,13 @@
 package com.ongcheeyi.zappy.adapters;
 
+import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.ongcheeyi.zappy.R;
 import com.ongcheeyi.zappy.weather.WeatherHourly;
@@ -18,9 +20,11 @@ import com.ongcheeyi.zappy.weather.WeatherHourly;
 public class HourAdapter extends RecyclerView.Adapter<HourAdapter.HourViewHolder> {
 
     private WeatherHourly[] hours;
+    private Context context;
 
-    public HourAdapter(WeatherHourly[] hours) {
+    public HourAdapter(Context context, WeatherHourly[] hours) {
         this.hours = hours;
+        this.context = context;
 
     }
 
@@ -44,9 +48,10 @@ public class HourAdapter extends RecyclerView.Adapter<HourAdapter.HourViewHolder
         return hours.length;
     }
 
-    public class HourViewHolder extends RecyclerView.ViewHolder {
+    public class HourViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
         public TextView timeLabel, summaryLabel, tempLabel;
         public ImageView iconImageView;
+
         public HourViewHolder(View itemView) {
             super(itemView);
 
@@ -54,6 +59,8 @@ public class HourAdapter extends RecyclerView.Adapter<HourAdapter.HourViewHolder
             summaryLabel = (TextView)itemView.findViewById(R.id.summaryLabel);
             tempLabel = (TextView)itemView.findViewById(R.id.tempLabel);
             iconImageView = (ImageView)itemView.findViewById(R.id.iconImageView);
+
+            itemView.setOnClickListener(this);
         }
 
         // bind data to view
@@ -62,6 +69,17 @@ public class HourAdapter extends RecyclerView.Adapter<HourAdapter.HourViewHolder
             summaryLabel.setText(hour.getSummary());
             tempLabel.setText(hour.getTemp()+"");
             iconImageView.setImageResource(hour.getIconId());
+        }
+
+        @Override
+        public void onClick(View v) {
+            String time = timeLabel.getText().toString();
+            String temp = tempLabel.getText().toString();
+            String summary = summaryLabel.getText().toString();
+            String msg = String.format("At %s, it will be %s and %s.", time, temp, summary.toLowerCase());
+
+            Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
+
         }
     }
 

@@ -36,7 +36,7 @@ public class HourlyForecastActivity extends Activity {
         Parcelable[] parcelables = intent.getParcelableArrayExtra(MainActivity.HOURLY);
         hours = Arrays.copyOf(parcelables,parcelables.length,WeatherHourly[].class);
 
-        HourAdapter adapter = new HourAdapter(hours);
+        HourAdapter adapter = new HourAdapter(this,hours);
         recyclerView.setAdapter(adapter);
 
         // According to the developer API, we need a LayoutManager to position items inside RecyclerView
