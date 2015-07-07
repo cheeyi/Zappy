@@ -3,6 +3,9 @@ package com.ongcheeyi.zappy.weather;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 /**
  * Created by CheeYi on 7/4/15.
  * Data model for storing weather information for the upcoming hours
@@ -41,8 +44,8 @@ public class WeatherHourly implements Parcelable {
         this.summary = summary;
     }
 
-    public double getTemp() {
-        return temp;
+    public int getTemp() {
+        return (int)Math.round(temp);
     }
 
     public void setTemp(double temp) {
@@ -51,6 +54,10 @@ public class WeatherHourly implements Parcelable {
 
     public String getIcon() {
         return icon;
+    }
+
+    public int getIconId() {
+        return Forecast.getIconId(icon);
     }
 
     public void setIcon(String icon) {
@@ -63,6 +70,12 @@ public class WeatherHourly implements Parcelable {
 
     public void setTimezone(String timezone) {
         this.timezone = timezone;
+    }
+
+    public String getHour() {
+        SimpleDateFormat formatter = new SimpleDateFormat("h a");
+        Date date = new Date(time*1000);
+        return formatter.format(date);
     }
 
     @Override
